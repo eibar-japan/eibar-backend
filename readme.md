@@ -1,5 +1,11 @@
 # Eibar backend
 
+## What is Eibar and what is the role of this repo?
+
+Eibar is the "Uber" for freelance, in-person language tutors. It allows teachers and students to sign up as users of the Eibar app and find each other for in-person language lessons.
+
+This repo is the heart of the Eibar system, as it is the API backend that holds (will hold?) all user, lesson, and payment data and serve that data to the various other Eibar consumers of that data: web application, iOS, and Android apps.
+
 ## Dev Environment Setup
 
 ### Prerequisites
