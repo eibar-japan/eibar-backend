@@ -2,8 +2,11 @@ module.exports = {
   test: {
     client: "postgresql",
     connection: {
-      database: "eibar-test",
+      host: process.env.DOCKER_DB_HOST || "localhost",
+      port: "5432",
+      database: "eibar_test",
       user: "eibaradmin",
+      password: "eibar12345",
     },
     pool: {
       min: 2,
@@ -17,8 +20,11 @@ module.exports = {
   development: {
     client: "postgresql",
     connection: {
+      host: process.env.DOCKER_DB_HOST || "localhost",
+      port: "5432",
       database: "eibar",
       user: "eibaradmin",
+      password: "eibar12345",
     },
     pool: {
       min: 2,
@@ -31,10 +37,7 @@ module.exports = {
 
   staging: {
     client: "postgresql",
-    connection: {
-      database: "eibar",
-      user: "eibaradmin",
-    },
+    connection: process.env.PG_CONNECTION_STRING,
     pool: {
       min: 2,
       max: 10,
@@ -46,11 +49,7 @@ module.exports = {
 
   production: {
     client: "postgresql",
-    connection: {
-      database: "my_db",
-      user: "username",
-      password: "password",
-    },
+    connection: process.env.PG_CONNECTION_STRING,
     pool: {
       min: 2,
       max: 10,

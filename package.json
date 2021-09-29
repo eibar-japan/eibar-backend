@@ -5,10 +5,18 @@
   "main": "index.js",
   "author": "Ian Cameron",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iankameron/eibar-backend.git"
+  },
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "export NODE_ENV=test && mocha --recursive --exit"
+    "test": "export NODE_ENV=test && export PORT=3001 && mocha --recursive --exit",
+    "mig": "node ./external/db/migrate.js",
+    "docker": "docker-compose up -d",
+    "psql": "psql -h localhost -p 5432 -U eibaradmin -d eibar",
+    "init-eibar": "npm install && npm run docker && npm run mig -- development,test latest"
   },
   "dependencies": {
     "express": "^4.17.1",

@@ -1,0 +1,27 @@
+version: "3.8"
+services:
+  eibardb:
+    image: "postgres:13.4"
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=pass1234
+    volumes:
+      - eibar-pg:/var/lib/postgresql/data
+      - ./conf/dev/initdb:/docker-entrypoint-initdb.d
+  eibar:
+    image: "node:14.18.0"
+    user: "node"
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DOCKER_DB_HOST=eibardb
+    volumes:
+      - ./:/home/app
+    working_dir: "/home/app"
+    command: ["npx", "nodemon", "index.js"]
+volumes:
+  eibar-pg:
+    driver: local

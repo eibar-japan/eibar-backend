@@ -10,7 +10,7 @@ chai.use(chaiHttp);
 
 const { knex, app } = require("../../../index");
 
-describe.only("User CRUD", () => {
+describe("User CRUD", () => {
   // CREATE
   let INPUT_USER_DATA;
 
