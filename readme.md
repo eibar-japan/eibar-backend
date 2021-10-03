@@ -2,13 +2,15 @@
 
 ## What is Eibar and what is the role of this repo?
 
-Eibar is the "Uber" for freelance, in-person language tutors. It allows teachers and students to sign up as users of the Eibar app and find each other for in-person language lessons.
+Eibar is the "Uber" for freelance, in-person language tutors. It helps teachers and students who sign up as users of the Eibar app to find each other for in-person language lessons.
+
+Anyone learning a language knows how valuable a face to face tutor can be. They also know how hard it can be to find one. Especially at a time and in a location that is suitable. Eibar seeks to keep students motivation high by making it easy to connect with tutors, and expanding the language learning market 
 
 This repo is the heart of the Eibar system, as it is the API backend that holds (will hold?) all user, lesson, and payment data and serve that data to the various other Eibar consumers of that data: web application, iOS, and Android apps.
 
 ## Getting started
 
-The Eibar development environment, while possible to recreate installing different
+The Eibar development environment, which is possible to recreate by installing the following prerequisites
 
 ### Prerequisites
 
@@ -91,4 +93,4 @@ Testing setup consists of:
 ## Notes
 
 - Regarding Node installation: The suggested running environment for the Node application is in a Docker container and the locally installed Node is not responsible for running the app. However, Node is required to populate node_modules and providing the user with the ability to use the "npm run xxx" commands that are used in setup, testing, etc. Of course, a locally installed Node instance can also be used to run the app, just like the Postgres database can also be run locally (with appropriate changes to settings files).
-- The app's port is changed to 3001 for testing, so as to not conflict with port 3000 being used in the Docker container.
+- The app's port is changed to 3001 for testing, so as not to conflict with port 3000 being used in the Docker container.
