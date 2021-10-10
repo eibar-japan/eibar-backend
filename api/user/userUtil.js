@@ -90,7 +90,7 @@ function updateUser(knex) {
     checkUpdateUser(req.params.userId, updateUserInput, knex)
       .then((empty) => {
         updateUserInput["updated_at"] = new Date();
-        return knex("user")
+        return knex("eibaruser")
           .where({ eid: req.params.userId })
           .whereNull("deleted_at")
           .update(updateUserInput, ["eid"]);
@@ -118,14 +118,14 @@ function deleteUser(knex) {
       throw new EibarError("mess", ERROR_DICT.E0008_USER_DOES_NOT_EXIST);
     }
 
-    knex("user")
+    knex("eibaruser")
       .select()
       // TODO: make sure that the user trying to delete is the user being deleted
       .where({ eid: req.params.userId })
       .whereNull("deleted_at")
       .then((rows) => {
         if (rows.length === 1) {
-          return knex("user")
+          return knex("eibaruser")
             .where({ eid: req.params.userId })
             .whereNull("deleted_at")
             .update({ deleted_at: new Date() })
@@ -151,7 +151,7 @@ function deleteUser(knex) {
 }
 
 function insertUser(knex, newUserData) {
-  return knex("user").insert(newUserData, ["eid"]);
+  return knex("eibaruser").insert(newUserData, ["eid"]);
 }
 
 function userFactory(knex) {
@@ -174,7 +174,7 @@ async function checkNewUser(newUserInput, knex) {
     throw new EibarError("mess", mapUserErrors(error.details));
   } else {
     let myError = null;
-    await knex("user")
+    await knex("eibaruser")
       .select()
       .where({ email: newUserInput.email })
       .whereNull("deleted_at")
@@ -208,7 +208,7 @@ async function checkUpdateUser(eid, updateUserInput, knex) {
     // TODO: redo update so this select statement is no longer necessary.
     // Go straight to update and catch the DB error.
     let myError = null;
-    await knex("user")
+    await knex("eibaruser")
       .select()
       .where({ eid: eid })
       .whereNull("deleted_at")
