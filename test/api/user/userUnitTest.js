@@ -1,37 +1,38 @@
 const chai = require("chai");
 const assert = chai.assert;
-const {
-  joiOptions,
-  userSchemaNew,
-  userSchemaUpdate,
-  mapUserErrors,
-  USER_FIRST_NAME_MIN_LENGTH,
-  USER_FIRST_NAME_MAX_LENGTH,
-  USER_LAST_NAME_MIN_LENGTH,
-  USER_LAST_NAME_MAX_LENGTH,
-  USER_EMAIL_MAX_LENGTH,
-} = require("../../../api/user/userUtil").schemaTest;
+const { joiOptions, userSchemaNew, userSchemaUpdate, EIBAR_USER_ERROR_MAP } =
+  require("../../../api/user/userUtil").schemaTest;
+
+const SCHEMA = require("../../../api/util/schema_constants");
+const { mapSchemaErrors } = require("../../../api/util/schema_common");
 
 const { EibarError, ERROR_DICT } = require("../../../api/util/error_handling");
 
 // helper functions for tests
 
 const TOO_LONG_EMAIL = () => {
-  return ("x".repeat(USER_EMAIL_MAX_LENGTH) + "@e.com").slice(
-    -(USER_EMAIL_MAX_LENGTH + 1)
+  return ("x".repeat(SCHEMA.USER_EMAIL_MAX_LENGTH) + "@e.com").slice(
+    -(SCHEMA.USER_EMAIL_MAX_LENGTH + 1)
   );
 };
 
-const TOO_SHORT_FIRST_NAME = () => "x".repeat(USER_FIRST_NAME_MIN_LENGTH - 1);
-const TOO_LONG_FIRST_NAME = () => "x".repeat(USER_FIRST_NAME_MAX_LENGTH + 1);
-const TOO_SHORT_LAST_NAME = () => "x".repeat(USER_LAST_NAME_MIN_LENGTH - 1);
-const TOO_LONG_LAST_NAME = () => "x".repeat(USER_LAST_NAME_MAX_LENGTH + 1);
+const TOO_SHORT_FIRST_NAME = () =>
+  "x".repeat(SCHEMA.USER_FIRST_NAME_MIN_LENGTH - 1);
+const TOO_LONG_FIRST_NAME = () =>
+  "x".repeat(SCHEMA.USER_FIRST_NAME_MAX_LENGTH + 1);
+const TOO_SHORT_LAST_NAME = () =>
+  "x".repeat(SCHEMA.USER_LAST_NAME_MIN_LENGTH - 1);
+const TOO_LONG_LAST_NAME = () =>
+  "x".repeat(SCHEMA.USER_LAST_NAME_MAX_LENGTH + 1);
 
 const validateSchemaGetEibarError = (schema, object) => {
   const { error, value } = schema.validate(object, joiOptions);
   if (error) {
     // console.log(error.details);
-    return new EibarError("mess", mapUserErrors(error.details));
+    return new EibarError(
+      "mess",
+      mapSchemaErrors(error.details, EIBAR_USER_ERROR_MAP)
+    );
   } else {
     return null;
   }
