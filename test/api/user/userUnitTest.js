@@ -28,7 +28,6 @@ const TOO_LONG_LAST_NAME = () =>
 const validateSchemaGetEibarError = (schema, object) => {
   const { error, value } = schema.validate(object, joiOptions);
   if (error) {
-    // console.log(error.details);
     return new EibarError(
       "mess",
       mapSchemaErrors(error.details, EIBAR_USER_ERROR_MAP)
@@ -47,7 +46,7 @@ const sortErrorArrays = (...errorArrays) => {
 
 const REMOVE_KEY_STRING = "REMOVE_KEY";
 
-const testInput = (schema, validInput, badValues, expectedErrors) => {
+const performSchemaTest = (schema, validInput, badValues, expectedErrors) => {
   badInput = {
     ...validInput,
     ...badValues,
@@ -57,8 +56,6 @@ const testInput = (schema, validInput, badValues, expectedErrors) => {
       delete badInput[key];
     }
   }
-  // console.log("data to be evaluated");
-  // console.log(badInput);
 
   eibarError = validateSchemaGetEibarError(schema, badInput);
 
@@ -92,72 +89,84 @@ describe("User input checking (new user)", () => {
   });
 
   it("should return no errors for valid data", () => {
-    testInput(userSchemaNew, INPUT, {}, []);
+    performSchemaTest(userSchemaNew, INPUT, {}, []);
   });
 
   it("should identify too-long email input", () => {
     // create bad email address based on only max length variable
 
-    testInput(userSchemaNew, INPUT, { email: TOO_LONG_EMAIL() }, [
+    performSchemaTest(userSchemaNew, INPUT, { email: TOO_LONG_EMAIL() }, [
       ERROR_DICT.E0005_USER_EMAIL_LONG,
     ]);
   });
 
   it("should identify invalid email address", () => {
-    testInput(userSchemaNew, INPUT, { email: "x" }, [
+    performSchemaTest(userSchemaNew, INPUT, { email: "x" }, [
       ERROR_DICT.E0006_USER_EMAIL_INVALID,
     ]);
   });
 
   it("should catch missing email address (no email property)", () => {
-    testInput(userSchemaNew, INPUT, { email: REMOVE_KEY_STRING }, [
+    performSchemaTest(userSchemaNew, INPUT, { email: REMOVE_KEY_STRING }, [
       ERROR_DICT.E0000_DEFAULT_ERROR,
       // TODO: should this have a different error for it?
     ]);
   });
 
   it("should catch missing email address (empty email property)", () => {
-    testInput(userSchemaNew, INPUT, { email: "" }, [
+    performSchemaTest(userSchemaNew, INPUT, { email: "" }, [
       ERROR_DICT.E0006_USER_EMAIL_INVALID,
     ]);
   });
   it("should catch missing email address (null email property)", () => {
-    testInput(userSchemaNew, INPUT, { email: null }, [
+    performSchemaTest(userSchemaNew, INPUT, { email: null }, [
       ERROR_DICT.E0000_DEFAULT_ERROR,
     ]);
   });
   it("should catch missing email address (undefined email property)", () => {
-    testInput(userSchemaNew, INPUT, { email: null }, [
+    performSchemaTest(userSchemaNew, INPUT, { email: null }, [
       ERROR_DICT.E0000_DEFAULT_ERROR,
     ]);
   });
 
   it("should identify too-short first name", () => {
-    testInput(userSchemaNew, INPUT, { first_name: TOO_SHORT_FIRST_NAME() }, [
-      ERROR_DICT.E0001_USER_FIRST_NAME_SHORT,
-    ]);
+    performSchemaTest(
+      userSchemaNew,
+      INPUT,
+      { first_name: TOO_SHORT_FIRST_NAME() },
+      [ERROR_DICT.E0001_USER_FIRST_NAME_SHORT]
+    );
   });
 
   it("should identify too-long first name", () => {
-    testInput(userSchemaNew, INPUT, { first_name: TOO_LONG_FIRST_NAME() }, [
-      ERROR_DICT.E0002_USER_FIRST_NAME_LONG,
-    ]);
+    performSchemaTest(
+      userSchemaNew,
+      INPUT,
+      { first_name: TOO_LONG_FIRST_NAME() },
+      [ERROR_DICT.E0002_USER_FIRST_NAME_LONG]
+    );
   });
 
   it("should identify too-short last name", () => {
-    testInput(userSchemaNew, INPUT, { last_name: TOO_SHORT_LAST_NAME() }, [
-      ERROR_DICT.E0003_USER_LAST_NAME_SHORT,
-    ]);
+    performSchemaTest(
+      userSchemaNew,
+      INPUT,
+      { last_name: TOO_SHORT_LAST_NAME() },
+      [ERROR_DICT.E0003_USER_LAST_NAME_SHORT]
+    );
   });
 
   it("should identify too-long last name", () => {
-    testInput(userSchemaNew, INPUT, { last_name: TOO_LONG_LAST_NAME() }, [
-      ERROR_DICT.E0004_USER_LAST_NAME_LONG,
-    ]);
+    performSchemaTest(
+      userSchemaNew,
+      INPUT,
+      { last_name: TOO_LONG_LAST_NAME() },
+      [ERROR_DICT.E0004_USER_LAST_NAME_LONG]
+    );
   });
 
   it("should identify all errors if multiple present", () => {
-    testInput(
+    performSchemaTest(
       userSchemaNew,
       INPUT,
       {
@@ -174,6 +183,8 @@ describe("User input checking (new user)", () => {
   });
 });
 
+///////////////////////////////////////
+
 describe("User input checking (update user)", () => {
   let INPUT = {};
 
@@ -186,11 +197,11 @@ describe("User input checking (update user)", () => {
   });
 
   it("should return no errors for valid data (all fields)", () => {
-    testInput(userSchemaUpdate, INPUT, {}, []);
+    performSchemaTest(userSchemaUpdate, INPUT, {}, []);
   });
 
   it("should return no errors for valid data (just email)", () => {
-    testInput(
+    performSchemaTest(
       userSchemaUpdate,
       INPUT,
       { first_name: REMOVE_KEY_STRING, last_name: REMOVE_KEY_STRING },
@@ -198,7 +209,7 @@ describe("User input checking (update user)", () => {
     );
   });
   it("should return no errors for valid data (just last_name)", () => {
-    testInput(
+    performSchemaTest(
       userSchemaUpdate,
       INPUT,
       { first_name: REMOVE_KEY_STRING, email: REMOVE_KEY_STRING },
@@ -207,7 +218,7 @@ describe("User input checking (update user)", () => {
   });
 
   it("should return no errors for valid data (just first_name)", () => {
-    testInput(
+    performSchemaTest(
       userSchemaUpdate,
       INPUT,
       { last_name: REMOVE_KEY_STRING, email: REMOVE_KEY_STRING },
@@ -216,11 +227,16 @@ describe("User input checking (update user)", () => {
   });
 
   it("should return no errors for valid data (two fields)", () => {
-    testInput(userSchemaUpdate, INPUT, { email: REMOVE_KEY_STRING }, []);
+    performSchemaTest(
+      userSchemaUpdate,
+      INPUT,
+      { email: REMOVE_KEY_STRING },
+      []
+    );
   });
 
   it("should identify all errors if multiple present", () => {
-    testInput(
+    performSchemaTest(
       userSchemaUpdate,
       INPUT,
       {
@@ -236,90 +252,9 @@ describe("User input checking (update user)", () => {
     );
   });
 
-  // it("should identify too-long email input", () => {
-  //   testInput(userSchemaNew, INPUT, { email: "x".repeat(45) + "@e.com" }, [
-  //     ERROR_DICT.E0005_USER_EMAIL_LONG,
-  //   ]);
-  // });
-
-  // it("should identify invalid email address", () => {
-  //   testInput(userSchemaNew, INPUT, { email: "x" }, [
-  //     ERROR_DICT.E0006_USER_EMAIL_INVALID,
-  //   ]);
-  // });
-
-  // it("should catch missing email address (no email property)", () => {
-  //   testInput(userSchemaNew, INPUT, { email: REMOVE_KEY_STRING }, [
-  //     ERROR_DICT.E0006_USER_EMAIL_INVALID,
-  //   ]);
-  // });
-
-  // it("should catch missing email address (empty email property)", () => {
-  //   testInput(userSchemaNew, INPUT, { email: "" }, [
-  //     ERROR_DICT.E0006_USER_EMAIL_INVALID,
-  //   ]);
-  // });
-  // it("should catch missing email address (null email property)", () => {
-  //   testInput(userSchemaNew, INPUT, { email: null }, [
-  //     ERROR_DICT.E0000_DEFAULT_ERROR,
-  //   ]);
-  // });
-  // it("should catch missing email address (undefined email property)", () => {
-  //   testInput(userSchemaNew, INPUT, { email: null }, [
-  //     ERROR_DICT.E0000_DEFAULT_ERROR,
-  //   ]);
-  // });
-
-  // it("should identify too-short first name", () => {
-  //   testInput(
-  //     userSchemaNew,
-  //     INPUT,
-  //     { first_name: "x".repeat(USER_FIRST_NAME_MIN_LENGTH - 1) },
-  //     [ERROR_DICT.E0001_USER_FIRST_NAME_SHORT]
-  //   );
-  // });
-
-  // it("should identify too-long first name", () => {
-  //   testInput(
-  //     userSchemaNew,
-  //     INPUT,
-  //     { first_name: "x".repeat(USER_FIRST_NAME_MAX_LENGTH + 1) },
-  //     [ERROR_DICT.E0002_USER_FIRST_NAME_LONG]
-  //   );
-  // });
-
-  // it("should identify too-short last name", () => {
-  //   testInput(
-  //     userSchemaNew,
-  //     INPUT,
-  //     { last_name: "x".repeat(USER_LAST_NAME_MIN_LENGTH - 1) },
-  //     [ERROR_DICT.E0003_USER_LAST_NAME_SHORT]
-  //   );
-  // });
-
-  // it("should identify too-long last name", () => {
-  //   testInput(
-  //     userSchemaNew,
-  //     INPUT,
-  //     { last_name: "x".repeat(USER_LAST_NAME_MAX_LENGTH + 1) },
-  //     [ERROR_DICT.E0004_USER_LAST_NAME_LONG]
-  //   );
-  // });
-
-  // it("should identify all errors if multiple present", () => {
-  //   testInput(
-  //     userSchemaNew,
-  //     INPUT,
-  //     {
-  //       last_name: "x".repeat(USER_LAST_NAME_MAX_LENGTH + 1),
-  //       first_name: "x".repeat(USER_FIRST_NAME_MAX_LENGTH + 1),
-  //       email: "x".repeat(45) + "@e.com",
-  //     },
-  //     [
-  //       ERROR_DICT.E0004_USER_LAST_NAME_LONG,
-  //       ERROR_DICT.E0002_USER_FIRST_NAME_LONG,
-  //       ERROR_DICT.E0005_USER_EMAIL_LONG,
-  //     ]
-  //   );
-  // });
+  // TODO advanced. consider whether or not to repeat the same
+  // too-long, too-short, etc tests that are performed in New
+  // User data checks. Especially after the Joi schemas are
+  // refactored (if possible), the New and Update schemas will share
+  // these basic parts, so doubling up the testing should be redundant.
 });

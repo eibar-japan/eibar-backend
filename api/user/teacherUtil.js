@@ -70,6 +70,12 @@ const EIBAR_TEACHER_ERROR_MAP = {
 };
 
 module.exports = {
+  schemaTest: {
+    joiOptions,
+    teacherSchemaNew,
+    teacherSchemaUpdate,
+    EIBAR_TEACHER_ERROR_MAP,
+  },
   createTeacher,
   updateTeacher,
   deleteTeacher,
