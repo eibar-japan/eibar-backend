@@ -1,5 +1,6 @@
 const { v4: uuidv4, validate: validate_uuid } = require("uuid");
 const SCHEMA = require("../util/schema_constants");
+const { mapSchemaErrors } = require("../util/schema_common");
 const Joi = require("joi");
 const joiOptions = {
   abortEarly: false, // report all errors in schema
