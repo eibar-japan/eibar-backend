@@ -11,12 +11,11 @@ const checkToken = require("../auth/auth");
 const getUserRouter = require("./user/userRouter");
 
 const getApiRouter = (knex) => {
-  const userRouter = getUserRouter(knex);
   const apiRouter = express.Router();
 
   apiRouter.use("/", setupErrorTracker);
 
-  apiRouter.use("/user", userRouter);
+  apiRouter.use("/user", getUserRouter(knex));
 
   apiRouter.get("/availability", checkToken, (req, res) => {
     console.log("inside availability");
@@ -24,30 +23,6 @@ const getApiRouter = (knex) => {
     res.json(availability[currentResponse]);
   });
 
-  // apiRouter.get("/teachers/:id", (req, res) => {
-  //   const teacherID = req.params.id;
-  //   res.json(teachers[teacherID]);
-  // });
-
-  // apiRouter.get("/teachers/:id/lessons", (req, res) => {
-  //   const teacherID = req.params.id;
-  //   res.json(lessons[teacherID]);
-  // });
-
-  // apiRouter.get("/teachers/:id/photo", (req, res) => {
-  //   const teacherID = req.params.id;
-  //   res.writeHead(200, { "Content-Type": "image/jpeg" });
-  //   res.write(photoData);
-  // });
-
-  // apiRouter.use((err, req, res, next) => {
-  //   if (res.eibarErrors.length >= 1) {
-  //     responseDetails = createErrorResponse(res.eibarErrors);
-  //     res.status(responseDetails.statusCode).json(responseDetails.responseBody);
-  //   } else {
-  //     res.status(400).send(err.message);
-  //   }
-  // });
   apiRouter.use("/", (err, req, res, next) => {
     if (err.eibarErrors?.length >= 1) {
       const { statusCode, responseBody } = createErrorResponse(err.eibarErrors);

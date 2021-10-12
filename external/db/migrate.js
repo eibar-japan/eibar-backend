@@ -1,5 +1,4 @@
 const knexfile = require("./knexfile");
-// const Knex = require("knex");
 const inputEnvironment = process.argv[2];
 const migrationAction = process.argv[3];
 const color = require("colorette");

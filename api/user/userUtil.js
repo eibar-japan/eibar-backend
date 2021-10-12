@@ -1,4 +1,6 @@
 const { v4: uuidv4, validate: validate_uuid } = require("uuid");
+const SCHEMA = require("../util/schema_constants");
+const { mapSchemaErrors } = require("../util/schema_common");
 const Joi = require("joi");
 const joiOptions = {
   abortEarly: false, // report all errors in schema
@@ -10,40 +12,33 @@ const {
   customMessageError,
   genericEibarErrorHandler,
 } = require("../util/error_handling");
-const { custom } = require("joi");
 
-// TODO: move this kind of "data shape" information into a separate file and have it be
-// referenced by both the migrations and these checks.
-const USER_FIRST_NAME_MIN_LENGTH = 2;
-const USER_FIRST_NAME_MAX_LENGTH = 50;
-const USER_LAST_NAME_MIN_LENGTH = 2;
-const USER_LAST_NAME_MAX_LENGTH = 50;
-const USER_EMAIL_MAX_LENGTH = 50;
-
+// TODO advanced: redo these schemas to eliminate DRY.
+// Create base schema, then create New and Update with simple additions.
 const userSchemaNew = Joi.object({
   first_name: Joi.string()
     .alphanum()
-    .min(USER_FIRST_NAME_MIN_LENGTH)
-    .max(USER_FIRST_NAME_MAX_LENGTH)
+    .min(SCHEMA.USER_FIRST_NAME_MIN_LENGTH)
+    .max(SCHEMA.USER_FIRST_NAME_MAX_LENGTH)
     .required(),
   last_name: Joi.string()
     .alphanum()
-    .min(USER_LAST_NAME_MIN_LENGTH)
-    .max(USER_LAST_NAME_MAX_LENGTH)
+    .min(SCHEMA.USER_LAST_NAME_MIN_LENGTH)
+    .max(SCHEMA.USER_LAST_NAME_MAX_LENGTH)
     .required(),
-  email: Joi.string().max(USER_EMAIL_MAX_LENGTH).email().required(),
+  email: Joi.string().max(SCHEMA.USER_EMAIL_MAX_LENGTH).email().required(),
 });
 
 const userSchemaUpdate = Joi.object({
   first_name: Joi.string()
     .alphanum()
-    .min(USER_FIRST_NAME_MIN_LENGTH)
-    .max(USER_FIRST_NAME_MAX_LENGTH),
+    .min(SCHEMA.USER_FIRST_NAME_MIN_LENGTH)
+    .max(SCHEMA.USER_FIRST_NAME_MAX_LENGTH),
   last_name: Joi.string()
     .alphanum()
-    .min(USER_LAST_NAME_MIN_LENGTH)
-    .max(USER_LAST_NAME_MAX_LENGTH),
-  email: Joi.string().max(USER_EMAIL_MAX_LENGTH).email(),
+    .min(SCHEMA.USER_LAST_NAME_MIN_LENGTH)
+    .max(SCHEMA.USER_LAST_NAME_MAX_LENGTH),
+  email: Joi.string().max(SCHEMA.USER_EMAIL_MAX_LENGTH).email(),
 }).or("first_name", "last_name", "email");
 
 function createUser(knex) {
@@ -90,7 +85,7 @@ function updateUser(knex) {
     checkUpdateUser(req.params.userId, updateUserInput, knex)
       .then((empty) => {
         updateUserInput["updated_at"] = new Date();
-        return knex("user")
+        return knex("eibaruser")
           .where({ eid: req.params.userId })
           .whereNull("deleted_at")
           .update(updateUserInput, ["eid"]);
@@ -118,14 +113,14 @@ function deleteUser(knex) {
       throw new EibarError("mess", ERROR_DICT.E0008_USER_DOES_NOT_EXIST);
     }
 
-    knex("user")
+    knex("eibaruser")
       .select()
       // TODO: make sure that the user trying to delete is the user being deleted
       .where({ eid: req.params.userId })
       .whereNull("deleted_at")
       .then((rows) => {
         if (rows.length === 1) {
-          return knex("user")
+          return knex("eibaruser")
             .where({ eid: req.params.userId })
             .whereNull("deleted_at")
             .update({ deleted_at: new Date() })
@@ -151,7 +146,7 @@ function deleteUser(knex) {
 }
 
 function insertUser(knex, newUserData) {
-  return knex("user").insert(newUserData, ["eid"]);
+  return knex("eibaruser").insert(newUserData, ["eid"]);
 }
 
 function userFactory(knex) {
@@ -165,16 +160,19 @@ function userFactory(knex) {
 }
 
 async function checkNewUser(newUserInput, knex) {
-  // TODO: return false if other settings are not
-  // let checkResult = true;
-  // let eibarErrors = [];
-  const { error, value } = userSchemaNew.validate(newUserInput, joiOptions);
+  const { error: joiError, value } = userSchemaNew.validate(
+    newUserInput,
+    joiOptions
+  );
 
-  if (error) {
-    throw new EibarError("mess", mapUserErrors(error.details));
+  if (joiError) {
+    throw new EibarError(
+      "mess",
+      mapSchemaErrors(joiError.details, EIBAR_USER_ERROR_MAP)
+    );
   } else {
     let myError = null;
-    await knex("user")
+    await knex("eibaruser")
       .select()
       .where({ email: newUserInput.email })
       .whereNull("deleted_at")
@@ -197,18 +195,20 @@ async function checkNewUser(newUserInput, knex) {
 }
 
 async function checkUpdateUser(eid, updateUserInput, knex) {
-  // TODO: return false if other settings are not
-  const { error, value } = userSchemaUpdate.validate(
+  const { error: joiError, value } = userSchemaUpdate.validate(
     updateUserInput,
     joiOptions
   );
-  if (error) {
-    throw new EibarError("mess", mapUserErrors(error.details));
+  if (joiError) {
+    throw new EibarError(
+      "mess",
+      mapSchemaErrors(joiError.details, EIBAR_USER_ERROR_MAP)
+    );
   } else {
     // TODO: redo update so this select statement is no longer necessary.
     // Go straight to update and catch the DB error.
     let myError = null;
-    await knex("user")
+    await knex("eibaruser")
       .select()
       .where({ eid: eid })
       .whereNull("deleted_at")
@@ -239,21 +239,6 @@ async function checkUpdateUser(eid, updateUserInput, knex) {
   }
 }
 
-function mapUserErrors(joiErrors) {
-  let eibarErrors = [];
-  joiErrors.forEach((error) => {
-    const errorKey = `${error.context.key}--${error.type}`;
-    if (errorKey in EIBAR_USER_ERROR_MAP) {
-      eibarErrors.push(EIBAR_USER_ERROR_MAP[errorKey]);
-    } else {
-      eibarErrors.push(
-        customMessageError(ERROR_DICT.E0000_DEFAULT_ERROR, error.message)
-      );
-    }
-  });
-  return eibarErrors;
-}
-
 const EIBAR_USER_ERROR_MAP = {
   "first_name--any.required": ERROR_DICT.E0000_DEFAULT_ERROR,
   "first_name--string.min": ERROR_DICT.E0001_USER_FIRST_NAME_SHORT,
@@ -273,12 +258,7 @@ module.exports = {
     joiOptions,
     userSchemaNew,
     userSchemaUpdate,
-    mapUserErrors,
-    USER_FIRST_NAME_MIN_LENGTH,
-    USER_FIRST_NAME_MAX_LENGTH,
-    USER_LAST_NAME_MIN_LENGTH,
-    USER_LAST_NAME_MAX_LENGTH,
-    USER_EMAIL_MAX_LENGTH,
+    EIBAR_USER_ERROR_MAP,
   },
   createUser,
   updateUser,
