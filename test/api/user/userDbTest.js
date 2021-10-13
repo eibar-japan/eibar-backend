@@ -20,7 +20,7 @@ describe("User CRUD", () => {
       first_name: "jane",
       last_name: "brewer",
     };
-    return knex("user").delete();
+    return knex("eibaruser").delete();
   });
 
   it("should create a new user in the database for unused email address", () => {
@@ -32,7 +32,9 @@ describe("User CRUD", () => {
         assert.equal(res.status, 200);
         assert.typeOf(res.body, "Object");
 
-        return knex("user").select().where({ email: INPUT_USER_DATA.email });
+        return knex("eibaruser")
+          .select()
+          .where({ email: INPUT_USER_DATA.email });
       })
       .then((rows) => {
         assert.equal(rows.length, 1);
@@ -72,7 +74,7 @@ describe("User CRUD", () => {
         assert.typeOf(res.body, "Object");
 
         // Get user data from DB for checks
-        return knex("user")
+        return knex("eibaruser")
           .select()
           .where({ email: INPUT_USER_DATA.email })
           .orderBy("created_at");
@@ -133,7 +135,7 @@ describe("User CRUD", () => {
       })
       .then((res) => {
         assert.equal(res.status, 204);
-        return knex("user").select().where({ eid: userEid });
+        return knex("eibaruser").select().where({ eid: userEid });
       })
       .then((rows) => {
         assert.isNotNull(rows[0].deleted_at);
