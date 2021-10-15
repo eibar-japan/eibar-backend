@@ -10,8 +10,6 @@ const getUserRouter = (knex) => {
   const userRouter = express.Router();
 
   // user endpoints
-  userRouter.post("/", createUser(knex));
-
   userRouter.patch("/:userId", updateUser(knex));
 
   userRouter.delete("/:userId", deleteUser(knex));
