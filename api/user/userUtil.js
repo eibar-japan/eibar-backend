@@ -194,13 +194,13 @@ function deleteUser(knex) {
           throw new EibarError("mess", ERROR_DICT.E0008_USER_DOES_NOT_EXIST);
         }
 
-          return knex("eibaruser")
-            .where({ eid: req.params.userId })
-            .whereNull("deleted_at")
+        return knex("eibaruser")
+          .where({ eid: req.params.userId })
+          .whereNull("deleted_at")
           .update({ deleted_at: new Date() });
       })
-            .then((data) => {
-              res.sendStatus(204);
+      .then((data) => {
+        res.sendStatus(204);
       })
       // TODO remove existing sessions if they exist in Session DB
       .catch(genericEibarErrorHandler(next, ERROR_DICT.E9001_DB_ERROR, true));
