@@ -1,5 +1,5 @@
 const express = require("express");
-const { createUser, updateUser, deleteUser } = require("./userUtil");
+const { updateUser, deleteUser } = require("./userUtil");
 const {
   createTeacher,
   updateTeacher,
@@ -10,8 +10,6 @@ const getUserRouter = (knex) => {
   const userRouter = express.Router();
 
   // user endpoints
-  userRouter.post("/", createUser(knex));
-
   userRouter.patch("/:userId", updateUser(knex));
 
   userRouter.delete("/:userId", deleteUser(knex));

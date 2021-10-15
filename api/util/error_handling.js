@@ -75,6 +75,20 @@ const ERROR_DICT = Object.freeze({
       message: "E0008 message",
     },
   },
+  E0009_USER_PASSWORD_INVALID: {
+    statusCode: 400,
+    error: {
+      code: "E0009",
+      message: "E0009 message",
+    },
+  },
+  E0010_USER_PASSWORD_MISMATCH: {
+    statusCode: 400,
+    error: {
+      code: "E0010",
+      message: "E0010 message",
+    },
+  },
   E9000_OTHER_ERROR: {
     statusCode: 500,
     error: {
@@ -98,9 +112,9 @@ const ERROR_DICT = Object.freeze({
   },
 });
 
-function customMessageError(error, message) {
-  let customError = JSON.parse(JSON.stringify(error));
-  customError.error.message = message;
+function customMessageError(baseError, message) {
+  let customError = JSON.parse(JSON.stringify(baseError));
+  if (message) customError.error.message = message;
   return customError;
 }
 
@@ -129,11 +143,14 @@ function createErrorResponse(eibarErrors) {
   };
 }
 
-const genericEibarErrorHandler = (res, baseError, returnValue) => {
+const genericEibarErrorHandler = (next, baseError, useBaseErrorMessage) => {
   return (err) => {
-    res.eibarErrors.push(customMessageError(baseError, err.message));
-    console.log("genericEibarErrorHandler: ", err.message);
-    return returnValue;
+    if (err instanceof EibarError) next(err);
+
+    let messageOverride = useBaseErrorMessage ? null : err.message;
+    next(
+      new EibarError("mess", customMessageError(baseError, messageOverride))
+    );
   };
 };
 

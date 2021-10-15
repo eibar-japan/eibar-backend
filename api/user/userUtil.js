@@ -12,45 +12,73 @@ const {
   customMessageError,
   genericEibarErrorHandler,
 } = require("../util/error_handling");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 // TODO advanced: redo these schemas to eliminate DRY.
 // Create base schema, then create New and Update with simple additions.
-const userSchemaNew = Joi.object({
+
+const userSchemaBase = Joi.object({
+  // eid not checked beyond string, as it will only
+  eid: Joi.string(),
+  email: Joi.string()
+    .max(SCHEMA.USER_EMAIL_MAX_LENGTH)
+    .email()
+    .alter({
+      post: (schema) => schema.required(),
+      patch: (schema) => schema.optional(),
+      login: (schema) => schema.required(),
+    }),
   first_name: Joi.string()
     .alphanum()
     .min(SCHEMA.USER_FIRST_NAME_MIN_LENGTH)
     .max(SCHEMA.USER_FIRST_NAME_MAX_LENGTH)
-    .required(),
+    .alter({
+      post: (schema) => schema.required(),
+      patch: (schema) => schema.optional(),
+      login: (schema) => schema.forbidden(),
+    }),
   last_name: Joi.string()
     .alphanum()
     .min(SCHEMA.USER_LAST_NAME_MIN_LENGTH)
     .max(SCHEMA.USER_LAST_NAME_MAX_LENGTH)
-    .required(),
-  email: Joi.string().max(SCHEMA.USER_EMAIL_MAX_LENGTH).email().required(),
+    .alter({
+      post: (schema) => schema.required(),
+      patch: (schema) => schema.optional(),
+      login: (schema) => schema.forbidden(),
+    }),
+  password: Joi.string()
+    .pattern(SCHEMA.USER_PASSWORD_REGEX)
+    .alter({
+      post: (schema) => schema.required(),
+      patch: (schema) => schema.optional(),
+      login: (schema) => schema.required(),
+    }),
 });
 
-const userSchemaUpdate = Joi.object({
-  first_name: Joi.string()
-    .alphanum()
-    .min(SCHEMA.USER_FIRST_NAME_MIN_LENGTH)
-    .max(SCHEMA.USER_FIRST_NAME_MAX_LENGTH),
-  last_name: Joi.string()
-    .alphanum()
-    .min(SCHEMA.USER_LAST_NAME_MIN_LENGTH)
-    .max(SCHEMA.USER_LAST_NAME_MAX_LENGTH),
-  email: Joi.string().max(SCHEMA.USER_EMAIL_MAX_LENGTH).email(),
-}).or("first_name", "last_name", "email");
+const userSchemaNew = userSchemaBase.tailor("post");
+
+const userSchemaUpdate = userSchemaBase
+  .tailor("patch")
+  .or("email", "first_name", "last_name", "password");
+const userSchemaLogin = userSchemaBase.tailor("login");
 
 function createUser(knex) {
   return (req, res, next) => {
-    let newUserInput = req.body;
+    const newUserInput = req.body;
 
     // when checkNewUser is false, error is thrown
     checkNewUser(newUserInput, knex)
       .then((empty) => {
+        return bcrypt.hash(newUserInput.password, 10);
+      })
+      // TODO advanced: (low priority) add some error handling for bcrypt hash
+      .then((password_hash) => {
         const created_at = new Date();
+        delete newUserInput.password;
         const newUserData = {
           ...newUserInput,
+          password_hash: password_hash,
           eid: uuidv4(),
           created_at: created_at,
           updated_at: created_at,
@@ -59,7 +87,8 @@ function createUser(knex) {
         return insertUser(knex, newUserData);
       })
       .then((data) => {
-        res.status(200).json(data[0]);
+        req.userData = data[0];
+        next(); // pass on userData to the Login method
       })
       .catch((err) => {
         if (!err instanceof EibarError) {
@@ -71,6 +100,55 @@ function createUser(knex) {
         }
         next(err);
       });
+  };
+}
+
+function loginUser(knex) {
+  return (req, res, next) => {
+    // check password if not coming from registration (which populates req.userData)
+    if (!req.userData) {
+      const credentials = req.body;
+      const checkCredentials = userSchemaLogin.validate(req.body).value;
+      if (checkCredentials.error) {
+        res.sendStatus(401);
+      }
+
+      let responseUserData;
+      knex("eibaruser")
+        .where({ email: credentials.email })
+        .whereNull("deleted_at")
+        .then((rows) => {
+          if (rows.length === 1) {
+            responseUserData = userSchemaBase.validate(rows[0], {
+              stripUnknown: true,
+            }).value;
+            return bcrypt.compare(credentials.password, rows[0].password_hash);
+          } else {
+            res.sendStatus(401);
+          }
+        })
+        .then((passwordOK) => {
+          if (passwordOK) {
+            res.set(
+              "auth-token",
+              generateToken(req.body.email, responseUserData.eid)
+            );
+            res.status(200).json(responseUserData);
+          } else {
+            res.status(401).send("bad pw");
+          }
+        });
+    } else {
+      // THIS IS REPEAT OF SUCCESS CODE ABOVE. DRY!
+      responseUserData = userSchemaBase.validate(req.userData, {
+        stripUnknown: true,
+      }).value;
+      res.set(
+        "auth-token",
+        generateToken(req.body.email, responseUserData.eid)
+      );
+      res.status(200).json(responseUserData);
+    }
   };
 }
 
@@ -88,22 +166,15 @@ function updateUser(knex) {
         return knex("eibaruser")
           .where({ eid: req.params.userId })
           .whereNull("deleted_at")
-          .update(updateUserInput, ["eid"]);
+          .update(updateUserInput, ["*"]);
       })
       .then((data) => {
-        console.log("update successful");
-        res.status(200).json(data[0]);
+        responseUserData = userSchemaBase.validate(data[0], {
+          stripUnknown: true,
+        }).value;
+        res.status(200).json(responseUserData);
       })
-      .catch((err) => {
-        if (!err instanceof EibarError) {
-          next(
-            new EibarError("db mess", [
-              customMessageError(ERROR_DICT.E9001_DB_ERROR, err.message),
-            ])
-          );
-        }
-        next(err);
-      });
+      .catch(genericEibarErrorHandler(next, ERROR_DICT.E9001_DB_ERROR, true));
   };
 }
 
@@ -119,34 +190,25 @@ function deleteUser(knex) {
       .where({ eid: req.params.userId })
       .whereNull("deleted_at")
       .then((rows) => {
-        if (rows.length === 1) {
-          return knex("eibaruser")
-            .where({ eid: req.params.userId })
-            .whereNull("deleted_at")
-            .update({ deleted_at: new Date() })
-            .then((data) => {
-              res.sendStatus(204);
-            });
-        } else {
+        if (rows.length != 1) {
           throw new EibarError("mess", ERROR_DICT.E0008_USER_DOES_NOT_EXIST);
         }
+
+        return knex("eibaruser")
+          .where({ eid: req.params.userId })
+          .whereNull("deleted_at")
+          .update({ deleted_at: new Date() });
+      })
+      .then((data) => {
+        res.sendStatus(204);
       })
       // TODO remove existing sessions if they exist in Session DB
-      .catch((err) => {
-        if (!err instanceof EibarError) {
-          next(
-            new EibarError("db mess", [
-              customMessageError(ERROR_DICT.E9001_DB_ERROR, err.message),
-            ])
-          );
-        }
-        next(err);
-      });
+      .catch(genericEibarErrorHandler(next, ERROR_DICT.E9001_DB_ERROR, true));
   };
 }
 
 function insertUser(knex, newUserData) {
-  return knex("eibaruser").insert(newUserData, ["eid"]);
+  return knex("eibaruser").insert(newUserData, ["*"]);
 }
 
 function userFactory(knex) {
@@ -239,6 +301,16 @@ async function checkUpdateUser(eid, updateUserInput, knex) {
   }
 }
 
+function generateToken(email, eid) {
+  return jwt.sign(
+    {
+      email: email,
+      eid: eid,
+    },
+    process.env.JWT_SECRET
+  );
+}
+
 const EIBAR_USER_ERROR_MAP = {
   "first_name--any.required": ERROR_DICT.E0000_DEFAULT_ERROR,
   "first_name--string.min": ERROR_DICT.E0001_USER_FIRST_NAME_SHORT,
@@ -251,6 +323,10 @@ const EIBAR_USER_ERROR_MAP = {
   "email--string.max": ERROR_DICT.E0005_USER_EMAIL_LONG,
   "email--string.empty": ERROR_DICT.E0006_USER_EMAIL_INVALID,
   "email--string.base": ERROR_DICT.E0000_DEFAULT_ERROR, // empty string
+  "password--any.required": ERROR_DICT.E0009_USER_PASSWORD_INVALID, // empty string
+  "password--string.base": ERROR_DICT.E0009_USER_PASSWORD_INVALID, // empty string
+  "password--string.empty": ERROR_DICT.E0009_USER_PASSWORD_INVALID, // empty string
+  "password--string.pattern.base": ERROR_DICT.E0009_USER_PASSWORD_INVALID, // empty string
 };
 
 module.exports = {
@@ -261,6 +337,7 @@ module.exports = {
     EIBAR_USER_ERROR_MAP,
   },
   createUser,
+  loginUser,
   updateUser,
   deleteUser,
   userFactory,
