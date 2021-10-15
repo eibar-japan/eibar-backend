@@ -26,7 +26,7 @@ describe("Registration and Login", () => {
     return knex("eibaruser").delete();
   });
 
-  it.only("should register a new user for unused email address and login", () => {
+  it("should register a new user for unused email address and login", () => {
     return chai
       .request(app)
       .post("/api/register")
@@ -131,7 +131,7 @@ describe("Registration and Login", () => {
       });
   });
 
-  it.only("should fail to register a new user (bad input)", () => {
+  it("should fail to register a new user (bad input)", () => {
     const requester = chai.request(app).keepOpen();
 
     INPUT_USER_DATA.email = TOO_LONG_EMAIL();
@@ -149,7 +149,7 @@ describe("Registration and Login", () => {
       });
   });
 
-  it.only("should login an existing user", () => {
+  it("should login an existing user", () => {
     const requester = chai.request(app).keepOpen();
     const loginBody = {
       email: INPUT_USER_DATA.email,
@@ -183,7 +183,7 @@ describe("Registration and Login", () => {
       });
   });
 
-  it.only("should fail to login non-existant user", () => {
+  it("should fail to login non-existant user", () => {
     const requester = chai.request(app).keepOpen();
 
     const loginBody = {
@@ -209,7 +209,7 @@ describe("Registration and Login", () => {
       });
   });
 
-  it.only("should fail to login with wrong password", () => {
+  it("should fail to login with wrong password", () => {
     const requester = chai.request(app).keepOpen();
 
     const loginBody = {
