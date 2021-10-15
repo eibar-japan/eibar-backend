@@ -17,31 +17,51 @@ const jwt = require("jsonwebtoken");
 
 // TODO advanced: redo these schemas to eliminate DRY.
 // Create base schema, then create New and Update with simple additions.
-const userSchemaNew = Joi.object({
+
+const userSchemaBase = Joi.object({
+  // eid not checked beyond string, as it will only
+  eid: Joi.string(),
+  email: Joi.string()
+    .max(SCHEMA.USER_EMAIL_MAX_LENGTH)
+    .email()
+    .alter({
+      post: (schema) => schema.required(),
+      patch: (schema) => schema.optional(),
+      login: (schema) => schema.required(),
+    }),
   first_name: Joi.string()
     .alphanum()
     .min(SCHEMA.USER_FIRST_NAME_MIN_LENGTH)
     .max(SCHEMA.USER_FIRST_NAME_MAX_LENGTH)
-    .required(),
+    .alter({
+      post: (schema) => schema.required(),
+      patch: (schema) => schema.optional(),
+      login: (schema) => schema.forbidden(),
+    }),
   last_name: Joi.string()
     .alphanum()
     .min(SCHEMA.USER_LAST_NAME_MIN_LENGTH)
     .max(SCHEMA.USER_LAST_NAME_MAX_LENGTH)
-    .required(),
-  email: Joi.string().max(SCHEMA.USER_EMAIL_MAX_LENGTH).email().required(),
+    .alter({
+      post: (schema) => schema.required(),
+      patch: (schema) => schema.optional(),
+      login: (schema) => schema.forbidden(),
+    }),
+  password: Joi.string()
+    .pattern(SCHEMA.USER_PASSWORD_REGEX)
+    .alter({
+      post: (schema) => schema.required(),
+      patch: (schema) => schema.optional(),
+      login: (schema) => schema.required(),
+    }),
 });
 
-const userSchemaUpdate = Joi.object({
-  first_name: Joi.string()
-    .alphanum()
-    .min(SCHEMA.USER_FIRST_NAME_MIN_LENGTH)
-    .max(SCHEMA.USER_FIRST_NAME_MAX_LENGTH),
-  last_name: Joi.string()
-    .alphanum()
-    .min(SCHEMA.USER_LAST_NAME_MIN_LENGTH)
-    .max(SCHEMA.USER_LAST_NAME_MAX_LENGTH),
-  email: Joi.string().max(SCHEMA.USER_EMAIL_MAX_LENGTH).email(),
-}).or("first_name", "last_name", "email");
+const userSchemaNew = userSchemaBase.tailor("post");
+
+const userSchemaUpdate = userSchemaBase
+  .tailor("patch")
+  .or("email", "first_name", "last_name", "password");
+const userSchemaLogin = userSchemaBase.tailor("login");
 
 function createUser(knex) {
   return (req, res, next) => {
