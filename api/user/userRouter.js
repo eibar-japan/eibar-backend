@@ -1,5 +1,5 @@
 const express = require("express");
-const { createUser, updateUser, deleteUser } = require("./userUtil");
+const { updateUser, deleteUser } = require("./userUtil");
 const {
   createTeacher,
   updateTeacher,
