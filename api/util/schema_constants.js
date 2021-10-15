@@ -13,6 +13,11 @@ module.exports = {
   USER_LAST_NAME_MIN_LENGTH: 2,
   USER_LAST_NAME_MAX_LENGTH: 50,
   USER_EMAIL_MAX_LENGTH: 50,
+  USER_PASSWORD_MIN_LENGTH: 8,
+  USER_PASSWORD_MAX_LENGTH: 60,
+  USER_PASSWORD_REGEX: new RegExp(
+    "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])[a-zA-Z0-9]{8,60}$" // MIN AND MAX LENGTH HERE TOO
+  ),
 
   // teacher schema
   TEACHER_DISPLAYNAME_MIN_LENGTH: 4,
