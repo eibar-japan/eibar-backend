@@ -1,15 +1,13 @@
-const checkToken = (req, res, next) => {
-  let [type, token] = req.headers.authorization.split(" ");
+const jwt = require("jsonwebtoken");
 
-  if (type === "Bearer" && token === "12345") {
-    req.eibarUserName = "ian@cameron.com";
+const checkToken = (req, res, next) => {
+  let token;
+  try {
+    req.token = jwt.verify(req.get("auth-token"), process.env.JWT_SECRET);
     next();
-    return;
+  } catch {
+    res.sendStatus(403);
   }
-  // res.status(403).send("Invalid Token");
-  let tokenError = new Error("this is a problem");
-  tokenError.statusCode = 403;
-  throw tokenError;
 };
 
 module.exports = checkToken;

@@ -157,6 +157,7 @@ function updateUser(knex) {
     if (!validate_uuid(req.params.userId)) {
       throw new EibarError("mess", ERROR_DICT.E0008_USER_DOES_NOT_EXIST);
     }
+    if (req.token.eid !== req.params.userId) res.sendStatus(403);
 
     const updateUserInput = req.body;
 
@@ -183,6 +184,7 @@ function deleteUser(knex) {
     if (!validate_uuid(req.params.userId)) {
       throw new EibarError("mess", ERROR_DICT.E0008_USER_DOES_NOT_EXIST);
     }
+    if (req.token.eid !== req.params.userId) res.sendStatus(403);
 
     knex("eibaruser")
       .select()
