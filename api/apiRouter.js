@@ -16,7 +16,7 @@ const getApiRouter = (knex) => {
   apiRouter.use("/", setupErrorTracker);
   apiRouter.post("/register", createUser(knex), loginUser(knex));
   apiRouter.post("/login", loginUser(knex));
-  apiRouter.use("/user", getUserRouter(knex));
+  apiRouter.use("/user", checkToken, getUserRouter(knex));
   apiRouter.get("/availability", checkToken, (req, res) => {
     currentResponse = (currentResponse + 1) % 2;
     res.json(availability[currentResponse]);

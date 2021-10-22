@@ -71,8 +71,12 @@ describe("Registration and Login", () => {
       .then((res) => {
         assert.equal(res.status, 200);
         userEid = res.body.eid;
+        raw_token = res.header["auth-token"];
+
         // Delete user
-        return requester.delete(`/api/user/${userEid}`);
+        return requester
+          .delete(`/api/user/${userEid}`)
+          .set("auth-token", raw_token);
       })
       .then((res) => {
         assert.equal(res.status, 204);
