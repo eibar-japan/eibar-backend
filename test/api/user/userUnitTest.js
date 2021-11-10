@@ -25,6 +25,20 @@ const TOO_SHORT_LAST_NAME = () =>
 const TOO_LONG_LAST_NAME = () =>
   "x".repeat(SCHEMA.USER_LAST_NAME_MAX_LENGTH + 1);
 
+// basic valid password
+const BASE_PASSWORD = "Aa1aaaaa";
+
+const TOO_SHORT_PASSWORD = () =>
+  BASE_PASSWORD.slice(SCHEMA.USER_PASSWORD_MIN_LENGTH - 1);
+const TOO_LONG_PASSWORD = () => {
+  return (BASE_PASSWORD + "x".repeat(SCHEMA.USER_PASSWORD_MAX_LENGTH)).slice(
+    SCHEMA.USER_PASSWORD_MAX_LENGTH + 1
+  );
+};
+const PASSWORD_NO_DIGIT = () => BASE_PASSWORD.replace("1", "a");
+const PASSWORD_NO_LOWERCASE = () => BASE_PASSWORD.replace(/a/g, "A");
+const PASSWORD_NO_UPPERCASE = () => BASE_PASSWORD.replace("A", "a");
+
 const validateSchemaGetEibarError = (schema, object) => {
   const { error, value } = schema.validate(object, joiOptions);
   if (error) {
@@ -85,6 +99,7 @@ describe("User input checking (new user)", () => {
       email: "test@example.com",
       first_name: "jane",
       last_name: "doe",
+      password: BASE_PASSWORD,
     };
   });
 
@@ -118,13 +133,15 @@ describe("User input checking (new user)", () => {
       ERROR_DICT.E0006_USER_EMAIL_INVALID,
     ]);
   });
+
   it("should catch missing email address (null email property)", () => {
     performSchemaTest(userSchemaNew, INPUT, { email: null }, [
       ERROR_DICT.E0000_DEFAULT_ERROR,
     ]);
   });
+
   it("should catch missing email address (undefined email property)", () => {
-    performSchemaTest(userSchemaNew, INPUT, { email: null }, [
+    performSchemaTest(userSchemaNew, INPUT, { email: undefined }, [
       ERROR_DICT.E0000_DEFAULT_ERROR,
     ]);
   });
@@ -165,6 +182,63 @@ describe("User input checking (new user)", () => {
     );
   });
 
+  it("should identify missing password (missing key)", () => {
+    performSchemaTest(userSchemaNew, INPUT, { password: REMOVE_KEY_STRING }, [
+      ERROR_DICT.E0009_USER_PASSWORD_INVALID,
+    ]);
+  });
+
+  it("should identify missing password (empty)", () => {
+    performSchemaTest(userSchemaNew, INPUT, { password: "" }, [
+      ERROR_DICT.E0009_USER_PASSWORD_INVALID,
+    ]);
+  });
+
+  it("should identify missing password (null)", () => {
+    performSchemaTest(userSchemaNew, INPUT, { password: null }, [
+      ERROR_DICT.E0009_USER_PASSWORD_INVALID,
+    ]);
+  });
+
+  it("should identify too-short password", () => {
+    performSchemaTest(
+      userSchemaNew,
+      INPUT,
+      { password: TOO_SHORT_PASSWORD() },
+      [ERROR_DICT.E0009_USER_PASSWORD_INVALID]
+    );
+  });
+
+  it("should identify too-long password", () => {
+    performSchemaTest(userSchemaNew, INPUT, { password: TOO_LONG_PASSWORD() }, [
+      ERROR_DICT.E0009_USER_PASSWORD_INVALID,
+    ]);
+  });
+
+  it("should identify password missing digit", () => {
+    performSchemaTest(userSchemaNew, INPUT, { password: PASSWORD_NO_DIGIT() }, [
+      ERROR_DICT.E0009_USER_PASSWORD_INVALID,
+    ]);
+  });
+
+  it("should identify password missing lowercase", () => {
+    performSchemaTest(
+      userSchemaNew,
+      INPUT,
+      { password: PASSWORD_NO_LOWERCASE() },
+      [ERROR_DICT.E0009_USER_PASSWORD_INVALID]
+    );
+  });
+
+  it("should identify password missing uppercase", () => {
+    performSchemaTest(
+      userSchemaNew,
+      INPUT,
+      { password: PASSWORD_NO_UPPERCASE() },
+      [ERROR_DICT.E0009_USER_PASSWORD_INVALID]
+    );
+  });
+
   it("should identify all errors if multiple present", () => {
     performSchemaTest(
       userSchemaNew,
@@ -173,11 +247,13 @@ describe("User input checking (new user)", () => {
         last_name: TOO_LONG_LAST_NAME(),
         first_name: TOO_LONG_FIRST_NAME(),
         email: TOO_LONG_EMAIL(),
+        password: PASSWORD_NO_UPPERCASE(),
       },
       [
         ERROR_DICT.E0004_USER_LAST_NAME_LONG,
         ERROR_DICT.E0002_USER_FIRST_NAME_LONG,
         ERROR_DICT.E0005_USER_EMAIL_LONG,
+        ERROR_DICT.E0009_USER_PASSWORD_INVALID,
       ]
     );
   });
@@ -193,6 +269,7 @@ describe("User input checking (update user)", () => {
       email: "test@example.com",
       first_name: "jane",
       last_name: "doe",
+      password: BASE_PASSWORD,
     };
   });
 
@@ -258,3 +335,9 @@ describe("User input checking (update user)", () => {
   // refactored (if possible), the New and Update schemas will share
   // these basic parts, so doubling up the testing should be redundant.
 });
+
+module.exports = {
+  TOO_LONG_EMAIL,
+  TOO_LONG_FIRST_NAME,
+  TOO_LONG_LAST_NAME,
+};

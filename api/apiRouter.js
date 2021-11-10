@@ -3,22 +3,21 @@ const express = require("express");
 const availability = require("../data/available_teachers");
 const { createErrorResponse } = require("./util/error_handling");
 
-// const teachers = require("../data/teacher_data");
-// const lessons = require("../data/teacher_lessons");
 let currentResponse = 0;
 const checkToken = require("../auth/auth");
 
 const getUserRouter = require("./user/userRouter");
 
+const { createUser, loginUser } = require("./user/userUtil");
+
 const getApiRouter = (knex) => {
   const apiRouter = express.Router();
 
   apiRouter.use("/", setupErrorTracker);
-
-  apiRouter.use("/user", getUserRouter(knex));
-
+  apiRouter.post("/register", createUser(knex), loginUser(knex));
+  apiRouter.post("/login", loginUser(knex));
+  apiRouter.use("/user", checkToken, getUserRouter(knex));
   apiRouter.get("/availability", checkToken, (req, res) => {
-    console.log("inside availability");
     currentResponse = (currentResponse + 1) % 2;
     res.json(availability[currentResponse]);
   });

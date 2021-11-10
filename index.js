@@ -7,7 +7,7 @@ const app = express();
 const apiRouter = require("./api/apiRouter")(knex);
 const port = process.env.PORT || 3000;
 // const expressip = require("express-ip");
-// require("dotenv").config();
+require("dotenv").config();
 
 // app.use(express.static("dist"));
 // app.use(expressip().getIpInfoMiddleware);
