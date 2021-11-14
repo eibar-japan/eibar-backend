@@ -12,9 +12,41 @@ const {
   customMessageError,
 } = require("../util/error_handling");
 
-const teacherSchemaNew = Joi.object({
+const teacherSchemaNew = Joi.object({// TODO beginner: finish defining schema
   username: Joi.string(),
-  // TODO beginner: finish defining schema
+  email: Joi.string()
+    .max(SCHEMA.USER_EMAIL_MAX_LENGTH)
+    .email()
+    .alter({
+      post: (schema) => schema.required(),
+      patch: (schema) => schema.optional(),
+      login: (schema) => schema.required(),
+    }),
+  first_name: Joi.string()
+    .alphanum()
+    .min(SCHEMA.FIRST_NAME_MIN_LENGTH)
+    .max(SCHEMA.LAST_NAME_MAX_LENGTH)
+    .alter({
+      post: (schema) => schema.required(),
+      patch: (schema) => schema.optional(),
+      login: (schema) => schema.required(),
+    }),
+  last_name: Joi.string()
+    .aplhanum()
+    .min(SCHEMA.LAST_NAME_MIN_LENGTH),
+    .max(SCHEMA.LAST_NAME_MAX_LENGTH),
+    .alter({
+      post:(schema) => schema.required(),
+      patch:(schema) => schema.optional(),
+      login:(schema) => schema.required(),
+    }),
+  password: Joi.string()
+    .pattern(SCHEMA.USER_PASSWORD_REGEX)
+    .alter({
+      post:(schema) => schema.required(),
+      patch:(schema) => schema.optional(),
+      patch:(schema) => schema.required(),
+    }),  
 });
 
 const teacherSchemaUpdate = Joi.object({
