@@ -12,7 +12,7 @@ const {
   customMessageError,
 } = require("../util/error_handling");
 
-const teacherSchemaNew = Joi.object({// TODO beginner: finish defining schema
+const teacherSchemaNew = Joi.object({// TODO beginner: finish defining schema - DONE
   username: Joi.string(),
   email: Joi.string()
     .max(SCHEMA.USER_EMAIL_MAX_LENGTH)
