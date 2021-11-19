@@ -9,8 +9,6 @@ const port = process.env.PORT || 3000;
 // const expressip = require("express-ip");
 require("dotenv").config();
 
-// app.use(express.static("dist"));
-// app.use(expressip().getIpInfoMiddleware);
 app.use(
   "/api",
   express.json(),
@@ -18,6 +16,19 @@ app.use(
   apiRouter
 );
 
-app.listen(port, () => console.log(`Eibar-backend listening on port ${port}!`));
+switch (process.env.NODE_ENV || "development") {
+  case "development":
+    app.listen(port, () => console.log(`Eibar-backend listening on port ${port}!`));
+    break;
+  case "staging":
+  case "production":
+    knex.migrate.latest().then(() => {
+      app.listen(port, () => console.log(`Eibar-backend listening on port ${port}!`));
+    });
+}
+// app.use(express.static("dist"));
+// app.use(expressip().getIpInfoMiddleware);
+
+// app.listen(port, () => console.log(`Eibar-backend listening on port ${port}!`));
 
 module.exports = { knex, app };
