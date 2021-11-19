@@ -14,6 +14,7 @@ const getApiRouter = (knex) => {
   const apiRouter = express.Router();
 
   apiRouter.use("/", setupErrorTracker);
+  apiRouter.get("/", (req, res) => {res.send("Welcome to eibar")});
   apiRouter.post("/register", createUser(knex), loginUser(knex));
   apiRouter.post("/login", loginUser(knex));
   apiRouter.use("/user", checkToken, getUserRouter(knex));
