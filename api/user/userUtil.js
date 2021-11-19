@@ -14,6 +14,7 @@ const {
 } = require("../util/error_handling");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { sendEmail } = require("../../util/email");
 
 // TODO advanced: redo these schemas to eliminate DRY.
 // Create base schema, then create New and Update with simple additions.
@@ -88,6 +89,7 @@ function createUser(knex) {
       })
       .then((data) => {
         req.userData = data[0];
+        sendEmail();
         next(); // pass on userData to the Login method
       })
       .catch((err) => {
