@@ -45,6 +45,7 @@ module.exports = {
     migrations: {
       tableName: "migrations",
     },
+    ssl: true,
   },
 
   production: {
@@ -57,5 +58,6 @@ module.exports = {
     migrations: {
       tableName: "migrations",
     },
+    ssl: true,
   },
 };
