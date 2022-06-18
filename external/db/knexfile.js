@@ -14,6 +14,7 @@ module.exports = {
     },
     migrations: {
       tableName: "migrations",
+      directory: "external/db/migrations",
     },
   },
 
@@ -32,6 +33,7 @@ module.exports = {
     },
     migrations: {
       tableName: "migrations",
+      directory: "external/db/migrations",
     },
   },
 
@@ -47,6 +49,7 @@ module.exports = {
     },
     migrations: {
       tableName: "migrations",
+      directory: "external/db/migrations",
     },
   },
 
@@ -62,6 +65,7 @@ module.exports = {
     },
     migrations: {
       tableName: "migrations",
+      directory: "external/db/migrations",
     },
   },
 };

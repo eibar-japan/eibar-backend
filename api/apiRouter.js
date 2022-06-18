@@ -5,16 +5,15 @@ const { createErrorResponse } = require("./util/error_handling");
 
 let currentResponse = 0;
 const checkToken = require("../auth/auth");
-
 const getUserRouter = require("./user/userRouter");
-
 const { createUser, loginUser } = require("./user/userUtil");
 
 const getApiRouter = (knex) => {
   const apiRouter = express.Router();
 
   apiRouter.use("/", setupErrorTracker);
-  apiRouter.get("/", (req, res) => {res.send("Welcome to eibar")});
+  apiRouter.use("/", (req, res, next) => { console.log("request to host: " + req.headers.host + "  ---- URL: " + req.originalUrl); next(); });
+  apiRouter.get("/", (req, res) => { res.send("Welcome to eibar") });
   apiRouter.post("/register", createUser(knex), loginUser(knex));
   apiRouter.post("/login", loginUser(knex));
   apiRouter.use("/user", checkToken, getUserRouter(knex));
