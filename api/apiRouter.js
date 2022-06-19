@@ -27,7 +27,8 @@ const getApiRouter = (knex) => {
       const { statusCode, responseBody } = createErrorResponse(err.eibarErrors);
       res.status(statusCode).json(responseBody);
     } else {
-      // res.status(400).send(err.message);
+      
+      console.error("Unhandled error: ", err.message);
       res.status(500).send(err.message);
     }
   });

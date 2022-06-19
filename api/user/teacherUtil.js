@@ -1,10 +1,10 @@
 const { v4: uuidv4, validate: validate_uuid } = require("uuid");
 const Joi = require("joi");
 // TODO advanced: create common joi options patterns somewhere else and import them.
-const joiOptions = {
-  abortEarly: false, // report all errors in schema
-  render: false, // stops creation of Joi-formatted error message for performance
-};
+
+const Dinero = require('dinero.js');
+const LANGUAGE_CODES = require('iso-639-1').getAllCodes();
+const SCHEMA = require("../util/schema_constants");
 
 const {
   EibarError,
@@ -12,15 +12,24 @@ const {
   customMessageError,
 } = require("../util/error_handling");
 
-const teacherSchemaNew = Joi.object({
-  username: Joi.string(),
-  // TODO beginner: finish defining schema
+const teacherSchemabase = Joi.object({
+  eid: Joi.string()
+    .optional(),
+  display_name: Joi.string()
+    .min(SCHEMA.TEACHER_DISPLAYNAME_MIN_LENGTH)
+    .max(SCHEMA.TEACHER_DISPLAYNAME_MAX_LENGTH)
+    .required(),
+  language_code: Joi.string()
+    .allow(...LANGUAGE_CODES)
+    .required(),
+  default_rate: Joi
+    .custom(checkDineroObject,"custom checker for Dinero")
+    .required(),
 });
 
-const teacherSchemaUpdate = Joi.object({
-  username: Joi.string(),
-  // TODO beginner: finish defining schema
-}).or("username");
+// Leave New and Update schemas equivalent for now, with all fields required.
+const teacherSchemaNew = teacherSchemabase;
+const teacherSchemaUpdate = teacherSchemabase;
 
 function createTeacher(knex) {
   return (req, res, next) => {
@@ -64,14 +73,26 @@ async function checkUpdateTeacher(eid, updateTeacherInput, knex) {
   return;
 }
 
+function checkDineroObject(value, helpers) {
+  try {
+    let dineroValue = Dinero(value);
+  } catch {
+    throw new Error("Rejected by Dinero")
+  }
+  if (value.amount > 20000) {
+    helpers.error('number.max');
+  }
+}
+
 const EIBAR_TEACHER_ERROR_MAP = {
   // TODO beginner: fill out the error map for teacher schema
-  "username--any.required": "MY ERROR",
+  "display_name--any.required": ERROR_DICT.E0000_DEFAULT_ERROR,
+  "display_name--string.min": ERROR_DICT.E0000_DEFAULT_ERROR, // TODO create better eibar error
+  "display_name--string.max": ERROR_DICT.E0000_DEFAULT_ERROR, // TODO create better eibar error
 };
 
 module.exports = {
   schemaTest: {
-    joiOptions,
     teacherSchemaNew,
     teacherSchemaUpdate,
     EIBAR_TEACHER_ERROR_MAP,

@@ -2,6 +2,8 @@ const { v4: uuidv4, validate: validate_uuid } = require("uuid");
 const SCHEMA = require("../util/schema_constants");
 const { mapSchemaErrors } = require("../util/schema_common");
 const Joi = require("joi");
+
+// TODO refactor joiOptions, which is currently all over the place
 const joiOptions = {
   abortEarly: false, // report all errors in schema
   render: false, // stops creation of Joi-formatted error message for performance
@@ -20,7 +22,7 @@ const { sendEmail } = require("../../util/email");
 // Create base schema, then create New and Update with simple additions.
 
 const userSchemaBase = Joi.object({
-  // eid not checked beyond string, as it will only
+  // eid not checked beyond string, as it will only be used to serialize things outgoing.
   eid: Joi.string(),
   email: Joi.string()
     .max(SCHEMA.USER_EMAIL_MAX_LENGTH)
@@ -119,6 +121,8 @@ function loginUser(knex) {
       knex("eibaruser")
         .where({ email: credentials.email })
         .whereNull("deleted_at")
+
+        // Confirm user in DB, check password 
         .then((rows) => {
           if (rows.length === 1) {
             responseUserData = userSchemaBase.validate(rows[0], {
@@ -129,6 +133,8 @@ function loginUser(knex) {
             res.sendStatus(401);
           }
         })
+        
+        // If Password passes, set token and respond
         .then((passwordOK) => {
           if (passwordOK) {
             res.set(
@@ -140,6 +146,8 @@ function loginUser(knex) {
             res.status(401).send("bad pw");
           }
         });
+
+    // This runs when coming directly out of new user generation, no need to check PW
     } else {
       // THIS IS REPEAT OF SUCCESS CODE ABOVE. DRY!
       responseUserData = userSchemaBase.validate(req.userData, {
@@ -335,7 +343,6 @@ const EIBAR_USER_ERROR_MAP = {
 
 module.exports = {
   schemaTest: {
-    joiOptions,
     userSchemaNew,
     userSchemaUpdate,
     EIBAR_USER_ERROR_MAP,

@@ -20,6 +20,6 @@ module.exports = {
   ),
 
   // teacher schema
-  TEACHER_DISPLAYNAME_MIN_LENGTH: 4,
+  TEACHER_DISPLAYNAME_MIN_LENGTH: 2,
   TEACHER_DISPLAYNAME_MAX_LENGTH: 20,
 };

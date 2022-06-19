@@ -12,19 +12,19 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "export NODE_ENV=test && export PORT=3001 && mocha --recursive --exit",
+    "test": "export NODE_ENV=test && export PORT=3001 && mocha -r dotenv/config --recursive --exit",
     "mig": "node ./external/db/migrate.js",
     "docker": "docker-compose up -d",
     "db": "psql -h localhost -p 5432 -U eibaradmin -d eibar",
     "init-eibar": "npm install && npm run docker && npm run mig -- development,test latest"
   },
   "dependencies": {
-    "@sendgrid/mail": "^7.6.0",
+    "@sendgrid/mail": "^7.7.0",
     "bcryptjs": "^2.4.3",
     "dinero.js": "^1.9.0",
     "express": "^4.17.1",
     "iso-639-1": "^2.1.9",
-    "joi": "^17.4.2",
+    "joi": "^17.6.0",
     "jsonwebtoken": "^8.5.1",
     "knex": "^0.95.11",
     "pg": "^8.7.1",

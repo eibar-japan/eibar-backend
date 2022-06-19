@@ -1,13 +1,16 @@
-const knex = require("./external/db/knex")(
-  process.env.NODE_ENV || "development"
-);
+const NODE_ENV = process.env.NODE_ENV || "development";
+
+const knex = require("./external/db/knex")(NODE_ENV);
 
 const express = require("express");
 const app = express();
 const apiRouter = require("./api/apiRouter")(knex);
 const port = process.env.PORT || 3000;
-// const expressip = require("express-ip");
-require("dotenv").config();
+
+// development-only env var setup. testing doesn't run index, so dotenv is called via -r on the mocha command
+if (NODE_ENV === "development") {
+  require("dotenv").config();
+}
 
 app.use(
   "/api",
@@ -16,7 +19,7 @@ app.use(
   apiRouter
 );
 
-switch (process.env.NODE_ENV || "development") {
+switch (NODE_ENV || "development") {
   case "development":
     app.listen(port, () => console.log(`Eibar-backend listening on port ${port}!`));
     break;
@@ -26,9 +29,5 @@ switch (process.env.NODE_ENV || "development") {
       app.listen(port, () => console.log(`Eibar-backend listening on port ${port}!`));
     });
 }
-// app.use(express.static("dist"));
-// app.use(expressip().getIpInfoMiddleware);
-
-// app.listen(port, () => console.log(`Eibar-backend listening on port ${port}!`));
 
 module.exports = { knex, app };
